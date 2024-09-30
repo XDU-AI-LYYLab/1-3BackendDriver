@@ -1,44 +1,44 @@
-//
-// Created by Lhuna on 2024/9/29.
-//
-
+// utils.hpp
 #ifndef UTILS_HPP
 #define UTILS_HPP
 
 #include <unordered_map>
 #include <iostream>
-#include <fstream>
-#include <sstream>
 #include <vector>
 #include <ctime>
 #include <sys/wait.h>
 #include <unistd.h>
+#include "toml.hpp"
 
-std::unordered_map<int, std::pair<std::string, std::vector<std::string>>> config_map;
+// 将配置存储在一个哈希表中，其中键是组号
+inline std::unordered_map<int, std::pair<std::string, std::vector<std::string>>> config_map;
 
-void PrintHelp() {
+inline void PrintHelp() {
     std::cout << "Usage:\n";
     std::cout << "  /h or -h : Print this help message and exit.\n";
     std::cout << "  /f or -f <config_file> : Specify the configuration file.\n";
 }
 
 bool LoadConfig(const std::string& file_path) {
-    std::ifstream file(file_path);
-    std::string line;
-    int key = 1;
-    while (std::getline(file, line)) {
-        std::istringstream iss(line);
-        std::string path;
-        if (!(iss >> path)) { continue; }
-        std::vector<std::string> args;
-        std::string arg;
-        while (iss >> arg) { args.push_back(arg); }
-        config_map[key++] = {path, args};
+    try {
+        auto config = toml::parse(file_path);
+        auto groups = toml::find<std::vector<toml::value>>(config, "group");
+
+        for (const auto& group : groups) {
+            int id = toml::find<int>(group, "id");
+            std::string path = toml::find<std::string>(group, "path");
+            auto args = toml::find<std::vector<std::string>>(group, "args");
+
+            config_map[id] = std::make_pair(path, args);
+        }
+        return true;
+    } catch (const std::exception& e) {
+        std::cerr << "Error loading config: " << e.what() << std::endl;
+        return false;
     }
-    return true;
 }
 
-std::string GetTimestamp() {
+inline std::string GetTimestamp() {
     auto t = std::time(nullptr);
     auto tm = *std::localtime(&t);
     std::ostringstream oss;
@@ -63,6 +63,24 @@ void RunProgram(int key) {
             exit(EXIT_FAILURE);
         }
         dup2(fd, STDOUT_FILENO);
-        dup
+        dup2(fd, STDERR_FILENO);
+        close(fd);
 
-#endif
+        std::vector<char*> cargs;
+        cargs.push_back(const_cast<char*>(path.c_str()));
+        for (auto& arg : args) {
+            cargs.push_back(const_cast<char*>(arg.c_str()));
+        }
+        cargs.push_back(nullptr);
+
+        execvp(path.c_str(), cargs.data());
+        perror("execvp failed");
+        exit(EXIT_FAILURE);
+    } else if (pid > 0) { // Parent process
+        waitpid(pid, nullptr, 0); // Wait for the child process to finish
+    } else {
+        perror("fork failed");
+    }
+}
+
+#endif // UTILS_HPP

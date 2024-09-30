@@ -3,9 +3,10 @@
 //
 
 // main.cpp
-#include <crow.h>
+#include <utility>
+
+#include "crow.h"
 #include "utils.hpp"
-#include "server.hpp"
 
 int main(int argc, char* argv[]) {
     if (argc < 2) {
@@ -28,6 +29,12 @@ int main(int argc, char* argv[]) {
     }
 
     crow::SimpleApp app;
-    SetupServer(app);
+    CROW_ROUTE(app, "/group/<int>")([](int group_id){
+        if (!config_map.contains(group_id)) {
+            return crow::response(404, "Error: Group does not exist"); // 返回404错误
+        }
+        RunProgram(group_id);
+        return crow::response("Program for group " + std::to_string(group_id) + " started.");
+    });
     app.port(18080).multithreaded().run();
 }

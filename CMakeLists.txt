@@ -16,17 +16,6 @@ file(GLOB_RECURSE HEADERS "include/*.hpp")
 # 添加可执行文件
 add_executable(${PROJECT_NAME} ${SOURCES} ${HEADERS})
 
-# 添加Boost::Asio
-find_package(Boost REQUIRED COMPONENTS system asio)
-
-if(Boost_FOUND)
-    include_directories(${Boost_INCLUDE_DIRS})
-    #set(ASIO_INCLUDE_DIR ${Boost_INCLUDE_DIRS}/boost/asio)
-    target_link_libraries(${PROJECT_NAME} PRIVATE ${Boost_LIBRARIES})
-
-else()
-    message(FATAL_ERROR "Could not find Boost libraries")
-endif()
 # 引入Crow库
 include(FetchContent)
 
@@ -43,6 +32,17 @@ target_link_libraries(${PROJECT_NAME} PUBLIC Crow::Crow)
 
 # Set the features for the Crow dependency
 set(CROW_FEATURES ssl compression)
+
+# Import lib toml11
+FetchContent_Declare(
+        toml11
+        GIT_REPOSITORY https://github.com/ToruNiina/toml11.git
+        GIT_TAG        v4.2.0
+)
+
+FetchContent_MakeAvailable(toml11)
+
+target_link_libraries(${PROJECT_NAME} PRIVATE toml11::toml11)
 
 # 添加include目录
 target_include_directories(${PROJECT_NAME} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include)
