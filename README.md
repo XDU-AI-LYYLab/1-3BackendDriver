@@ -89,7 +89,3 @@ Ensure that you have the necessary permissions to execute the software and that 
 ### Monitoring and Logs
 
 Logs for each executed program are stored in the directory specified by `log_path` in the configuration file. These logs include the output and error streams of the programs, helping in troubleshooting and monitoring the execution.
-
----
-
-Ensure this manual is updated as the software evolves or as new features are added. This will help maintain clarity and usability for end users.
